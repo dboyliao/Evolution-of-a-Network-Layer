@@ -7,6 +7,7 @@
 //
 
 @testable import NetworkingEvolution
+import PromiseKit
 import SwiftyJSON
 import XCTest
 
@@ -19,7 +20,14 @@ extension ViewControllerTests {
     let viewController = ViewController()
     viewController.fetchUser = MockSuccessFetchUser()
     viewController.loadViewIfNeeded()
-    XCTAssertEqual(viewController.label.text, "Username: feighter09")
+    
+    let expectation = expectationWithDescription("Label set")
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10), dispatch_get_main_queue()) {
+      XCTAssertEqual(viewController.label.text, "Username: feighter09")
+      expectation.fulfill()
+    }
+    
+    waitForExpectationsWithTimeout(0.0001, handler: nil)
   }
   
   func test_failureNetworkResponse_showsErrorMessage()
@@ -27,21 +35,28 @@ extension ViewControllerTests {
     let viewController = ViewController()
     viewController.fetchUser = MockFailureFetchUser()
     viewController.loadViewIfNeeded()
-    XCTAssertEqual(viewController.label.text, "Request failed")
+    
+    let expectation = expectationWithDescription("Label set")
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10), dispatch_get_main_queue()) { 
+      XCTAssertEqual(viewController.label.text, "Request failed")
+      expectation.fulfill()
+    }
+    
+    waitForExpectationsWithTimeout(0.0001, handler: nil)
   }
 }
 
 // MARK: - Mocks
 class MockSuccessFetchUser: FetchUser {
-  override func perform(username: String, callback: (User?, ErrorType?) -> Void)
+  override func perform(username: String) -> Promise<User>
   {
-    callback(User(name: username), nil)
+    return Promise(User(name: username))
   }
 }
 
 class MockFailureFetchUser: FetchUser {
-  override func perform(username: String, callback: (User?, ErrorType?) -> Void)
+  override func perform(username: String) -> Promise<User>
   {
-    callback(nil, NSError(domain: "", code: -1, userInfo: nil))
+    return Promise(error: NSError(domain: "", code: -1, userInfo: nil))
   }
 }
