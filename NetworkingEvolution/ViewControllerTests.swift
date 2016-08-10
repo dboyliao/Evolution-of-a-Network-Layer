@@ -10,49 +10,37 @@
 import SwiftyJSON
 import XCTest
 
-class ViewControllerTests: XCTestCase {
-  var viewController: ViewController!
-  
-  override func setUp()
-  {
-    super.setUp()
-    
-    viewController = ViewController()
-  }
-}
+class ViewControllerTests: XCTestCase {}
 
 // MARK: Tests
 extension ViewControllerTests {
   func test_successNetworkResponse_showsUsername()
   {
-    viewController.networkClient = MockSuccessNetworkClient()
+    let viewController = ViewController()
+    viewController.fetchUser = MockSuccessFetchUser()
     viewController.loadViewIfNeeded()
     XCTAssertEqual(viewController.label.text, "Username: feighter09")
   }
   
   func test_failureNetworkResponse_showsErrorMessage()
   {
-    viewController.networkClient = MockFailureNetworkClient()
+    let viewController = ViewController()
+    viewController.fetchUser = MockFailureFetchUser()
     viewController.loadViewIfNeeded()
     XCTAssertEqual(viewController.label.text, "Request failed")
   }
 }
 
 // MARK: - Mocks
-struct MockSuccessNetworkClient: NetworkClientType {
-  func makeRequest<Response: JSONDecodable>(url: String,
-                   params: [String : AnyObject],
-                   callback: (Response?, ErrorType?) -> Void)
+class MockSuccessFetchUser: FetchUser {
+  override func perform(username: String, callback: (User?, ErrorType?) -> Void)
   {
-    let user = User(name: "feighter09")
-    callback(user as! Response, nil)
+    callback(User(name: username), nil)
   }
 }
 
-struct MockFailureNetworkClient: NetworkClientType {
-  func makeRequest<Response: JSONDecodable>(url: String,
-                   params: [String : AnyObject],
-                   callback: (Response?, ErrorType?) -> Void)
+class MockFailureFetchUser: FetchUser {
+  override func perform(username: String, callback: (User?, ErrorType?) -> Void)
   {
     callback(nil, NSError(domain: "", code: -1, userInfo: nil))
   }
